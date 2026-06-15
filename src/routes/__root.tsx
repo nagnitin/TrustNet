@@ -173,6 +173,7 @@ const NAV = [
 function BottomNav() {
   return (
     <nav
+      data-bottom-nav
       className="fixed bottom-0 left-0 right-0 z-[100] flex justify-around items-center bg-white/95 backdrop-blur border-t border-gray-200 h-16 md:hidden"
       style={{ fontFamily: "Inter, sans-serif" }}
     >
@@ -192,12 +193,78 @@ function BottomNav() {
   );
 }
 
+const ICON_ROUTES: Record<string, string> = {
+  home: "/",
+  map: "/heatmap",
+  pin_drop: "/heatmap",
+  location_on: "/heatmap",
+  group: "/circle",
+  groups: "/circle",
+  people: "/circle",
+  person_add: "/circle",
+  security: "/guardian",
+  shield_with_heart: "/guardian",
+  verified_user: "/guardian",
+  sos: "/sos",
+  emergency: "/sos",
+  person: "/profile",
+  account_circle: "/profile",
+  settings: "/profile",
+};
+
+const TEXT_ROUTES: Array<[RegExp, string]> = [
+  [/\bheatmap\b/i, "/heatmap"],
+  [/\bcircle\b/i, "/circle"],
+  [/\bguardian\b/i, "/guardian"],
+  [/\bsos\b|\bemergency\b/i, "/sos"],
+  [/\bprofile\b|\bsettings\b/i, "/profile"],
+  [/\bhome\b/i, "/"],
+];
+
+function ClickRouter() {
+  const router = useRouter();
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const actionable = target.closest("button, a, [role='button']") as HTMLElement | null;
+      if (!actionable) return;
+      // Skip our own BottomNav links — they already navigate via TanStack Link.
+      if (actionable.closest("nav[data-bottom-nav]")) return;
+      if (actionable.tagName === "A" && (actionable as HTMLAnchorElement).getAttribute("href")) return;
+
+      const icons = actionable.querySelectorAll(".material-symbols-outlined");
+      for (const icon of Array.from(icons)) {
+        const name = (icon.textContent || "").trim().toLowerCase();
+        if (ICON_ROUTES[name]) {
+          e.preventDefault();
+          router.navigate({ to: ICON_ROUTES[name] });
+          return;
+        }
+      }
+      const text = (actionable.textContent || "").trim().toLowerCase();
+      for (const [re, to] of TEXT_ROUTES) {
+        if (re.test(text)) {
+          e.preventDefault();
+          router.navigate({ to });
+          return;
+        }
+      }
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [router]);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
+      <ClickRouter />
       <Outlet />
       <BottomNav />
     </QueryClientProvider>
   );
 }
+
