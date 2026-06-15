@@ -7,7 +7,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -213,15 +214,25 @@ const ICON_ROUTES: Record<string, string> = {
 };
 
 const TEXT_ROUTES: Array<[RegExp, string]> = [
+  [/^i am safe/i, "/"],
+  [/cancel sos/i, "/"],
   [/\bheatmap\b/i, "/heatmap"],
   [/\bcircle\b/i, "/circle"],
   [/\bguardian\b/i, "/guardian"],
-  [/\bsos\b|\bemergency\b/i, "/sos"],
   [/\bprofile\b|\bsettings\b/i, "/profile"],
   [/\bhome\b/i, "/"],
 ];
 
-function ClickRouter() {
+function isSosButton(el: Element | null): boolean {
+  if (!el) return false;
+  if ((el as HTMLElement).closest("nav[data-bottom-nav]")) return false;
+  const text = (el.textContent || "").trim().toUpperCase();
+  return text === "SOS";
+}
+
+const HOLD_MS = 1500;
+
+function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
   const router = useRouter();
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -229,9 +240,12 @@ function ClickRouter() {
       if (!target) return;
       const actionable = target.closest("button, a, [role='button']") as HTMLElement | null;
       if (!actionable) return;
-      // Skip our own BottomNav links — they already navigate via TanStack Link.
       if (actionable.closest("nav[data-bottom-nav]")) return;
       if (actionable.tagName === "A" && (actionable as HTMLAnchorElement).getAttribute("href")) return;
+      if (isSosButton(actionable)) {
+        e.preventDefault();
+        return;
+      }
 
       const icons = actionable.querySelectorAll(".material-symbols-outlined");
       for (const icon of Array.from(icons)) {
@@ -251,19 +265,113 @@ function ClickRouter() {
         }
       }
     };
+    const down = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      const btn = target?.closest("button") ?? null;
+      if (isSosButton(btn)) onSosArm();
+    };
     document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, [router]);
+    document.addEventListener("pointerdown", down);
+    return () => {
+      document.removeEventListener("click", handler);
+      document.removeEventListener("pointerdown", down);
+    };
+  }, [router, onSosArm]);
   return null;
+}
+
+function SosHoldOverlay({
+  active,
+  onCancel,
+  onComplete,
+}: {
+  active: boolean;
+  onCancel: () => void;
+  onComplete: () => void;
+}) {
+  const [progress, setProgress] = useState(0);
+  const startRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!active) {
+      setProgress(0);
+      return;
+    }
+    startRef.current = performance.now();
+    let done = false;
+    const tick = () => {
+      const p = Math.min(1, (performance.now() - startRef.current) / HOLD_MS);
+      setProgress(p);
+      if (p >= 1) {
+        done = true;
+        onComplete();
+        return;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    const cancel = () => { if (!done) onCancel(); };
+    window.addEventListener("pointerup", cancel);
+    window.addEventListener("pointercancel", cancel);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("pointerup", cancel);
+      window.removeEventListener("pointercancel", cancel);
+    };
+  }, [active, onCancel, onComplete]);
+
+  if (!active) return null;
+  const r = 70;
+  const c = 2 * Math.PI * r;
+  const seconds = Math.max(0, Math.ceil((1 - progress) * (HOLD_MS / 1000)));
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm select-none"
+      style={{ touchAction: "none" }}
+    >
+      <div className="relative w-48 h-48">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r={r} stroke="rgba(255,255,255,0.2)" strokeWidth="10" fill="none" />
+          <circle
+            cx="80" cy="80" r={r}
+            stroke="#ef4444" strokeWidth="10" fill="none" strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={c * (1 - progress)}
+            style={{ transition: "stroke-dashoffset 60ms linear" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+          <span className="text-5xl font-extrabold tracking-widest">{seconds}</span>
+          <span className="text-xs uppercase tracking-[0.2em] mt-1">Hold</span>
+        </div>
+      </div>
+      <p className="text-white/90 text-sm mt-6 font-medium tracking-wide uppercase">
+        Keep holding to activate SOS
+      </p>
+      <p className="text-white/60 text-xs mt-1">Release to cancel</p>
+    </div>
+  );
 }
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  const [sosActive, setSosActive] = useState(false);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <ClickRouter />
+      <ClickRouter onSosArm={() => setSosActive(true)} />
       <Outlet />
       <BottomNav />
+      <SosHoldOverlay
+        active={sosActive}
+        onCancel={() => setSosActive(false)}
+        onComplete={() => {
+          setSosActive(false);
+          router.navigate({ to: "/sos" });
+        }}
+      />
     </QueryClientProvider>
   );
 }
