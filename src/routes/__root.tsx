@@ -267,7 +267,7 @@ function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
     };
     const down = (e: PointerEvent) => {
       const target = e.target as HTMLElement | null;
-      const btn = target?.closest("button");
+      const btn = target?.closest("button") ?? null;
       if (isSosButton(btn)) onSosArm();
     };
     document.addEventListener("click", handler);
