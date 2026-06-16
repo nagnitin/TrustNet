@@ -158,7 +158,5 @@ export const Route = createFileRoute("/heatmap")({
 });
 
 function Page() {
-  return (
-    <div className="bg-background text-on-background font-body-md min-h-screen flex flex-col overflow-hidden relative selection:bg-primary-container selection:text-on-primary-container" dangerouslySetInnerHTML={{ __html: HTML }} />
-  );
+  return <HtmlPage html={HTML} className="bg-background text-on-background font-body-md min-h-screen flex flex-col relative selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden pb-20 md:pb-0" />;
 }
