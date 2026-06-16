@@ -239,6 +239,7 @@ const HOLD_MS = 1500;
 
 function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
   const router = useRouter();
+  const { logout } = useAuth();
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
@@ -246,24 +247,38 @@ function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
       const actionable = target.closest("button, a, [role='button']") as HTMLElement | null;
       if (!actionable) return;
       if (actionable.closest("nav[data-bottom-nav]")) return;
-      if (actionable.tagName === "A" && (actionable as HTMLAnchorElement).getAttribute("href")) return;
+      if (actionable.tagName === "A" && (actionable as HTMLAnchorElement).getAttribute("href") && (actionable as HTMLAnchorElement).getAttribute("href") !== "#") return;
       if (isSosButton(actionable)) {
         e.preventDefault();
+        return;
+      }
+
+      const text = (actionable.textContent || "").trim();
+      if (LOGOUT_RE.test(text)) {
+        e.preventDefault();
+        logout();
+        router.navigate({ to: "/login" });
         return;
       }
 
       const icons = actionable.querySelectorAll(".material-symbols-outlined");
       for (const icon of Array.from(icons)) {
         const name = (icon.textContent || "").trim().toLowerCase();
+        if (name === "logout") {
+          e.preventDefault();
+          logout();
+          router.navigate({ to: "/login" });
+          return;
+        }
         if (ICON_ROUTES[name]) {
           e.preventDefault();
           router.navigate({ to: ICON_ROUTES[name] });
           return;
         }
       }
-      const text = (actionable.textContent || "").trim().toLowerCase();
+      const lower = text.toLowerCase();
       for (const [re, to] of TEXT_ROUTES) {
-        if (re.test(text)) {
+        if (re.test(lower)) {
           e.preventDefault();
           router.navigate({ to });
           return;
@@ -281,7 +296,7 @@ function ClickRouter({ onSosArm }: { onSosArm: () => void }) {
       document.removeEventListener("click", handler);
       document.removeEventListener("pointerdown", down);
     };
-  }, [router, onSosArm]);
+  }, [router, onSosArm, logout]);
   return null;
 }
 
