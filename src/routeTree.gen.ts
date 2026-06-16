@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SosRouteImport } from './routes/sos'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as HeatmapRouteImport } from './routes/heatmap'
 import { Route as GuardianRouteImport } from './routes/guardian'
 import { Route as CircleRouteImport } from './routes/circle'
@@ -24,6 +25,11 @@ const SosRoute = SosRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HeatmapRoute = HeatmapRouteImport.update({
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
+  '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/sos': typeof SosRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
+  '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/sos': typeof SosRoute
 }
@@ -69,20 +77,36 @@ export interface FileRoutesById {
   '/circle': typeof CircleRoute
   '/guardian': typeof GuardianRoute
   '/heatmap': typeof HeatmapRoute
+  '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/sos': typeof SosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/circle' | '/guardian' | '/heatmap' | '/profile' | '/sos'
+  fullPaths:
+    | '/'
+    | '/circle'
+    | '/guardian'
+    | '/heatmap'
+    | '/login'
+    | '/profile'
+    | '/sos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/circle' | '/guardian' | '/heatmap' | '/profile' | '/sos'
+  to:
+    | '/'
+    | '/circle'
+    | '/guardian'
+    | '/heatmap'
+    | '/login'
+    | '/profile'
+    | '/sos'
   id:
     | '__root__'
     | '/'
     | '/circle'
     | '/guardian'
     | '/heatmap'
+    | '/login'
     | '/profile'
     | '/sos'
   fileRoutesById: FileRoutesById
@@ -92,6 +116,7 @@ export interface RootRouteChildren {
   CircleRoute: typeof CircleRoute
   GuardianRoute: typeof GuardianRoute
   HeatmapRoute: typeof HeatmapRoute
+  LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   SosRoute: typeof SosRoute
 }
@@ -110,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/heatmap': {
@@ -148,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   CircleRoute: CircleRoute,
   GuardianRoute: GuardianRoute,
   HeatmapRoute: HeatmapRoute,
+  LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   SosRoute: SosRoute,
 }
