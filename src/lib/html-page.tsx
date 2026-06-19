@@ -61,7 +61,6 @@ function addInteractivity(html: string): string {
 const INTERACTIVE_CSS = `
 <style>
 @keyframes tn-rise-kf { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
-@keyframes tn-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,.0);} 50% { box-shadow: 0 0 0 8px rgba(99,102,241,.08);} }
 .tn-rise { animation: tn-rise-kf .5s cubic-bezier(.16,1,.3,1) both; }
 .tn-card { transition: transform .25s cubic-bezier(.16,1,.3,1), box-shadow .25s ease, background-color .2s ease; }
 .tn-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -14px rgba(0,0,0,.22); }
@@ -81,6 +80,44 @@ button:focus-visible, a:focus-visible { outline: 2px solid rgb(99 102 241 / .6);
 iframe[title="India Map"] { transition: filter .35s ease, transform .5s ease; }
 .group:hover iframe[title="India Map"] { filter: saturate(1.15) contrast(1.05); transform: scale(1.02); }
 .tn-rise:nth-child(2){animation-delay:.05s}.tn-rise:nth-child(3){animation-delay:.1s}.tn-rise:nth-child(4){animation-delay:.15s}.tn-rise:nth-child(5){animation-delay:.2s}.tn-rise:nth-child(6){animation-delay:.25s}
+
+/* === Responsive shell: phone-first, centered on tablet/desktop === */
+@media (min-width: 768px) {
+  /* Ambient backdrop behind the centered app shell */
+  body { background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(99,102,241,.10), transparent 60%),
+    radial-gradient(1000px 500px at 110% 10%, rgba(16,185,129,.10), transparent 60%),
+    #f1f5f9;
+  }
+  /* Widen any mobile-locked container */
+  .max-w-md { max-width: 32rem !important; }
+  /* Pin bottom navs to the centered shell width */
+  nav.fixed.bottom-0.w-full,
+  nav.fixed.bottom-0 {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 32rem !important;
+    border-radius: 1.25rem 1.25rem 0 0;
+    box-shadow: 0 -10px 40px -20px rgba(0,0,0,.25);
+  }
+  /* Floating absolute CTAs inside the shell */
+  .absolute.bottom-24.w-full, .absolute.bottom-20.w-full { max-width: 32rem; }
+}
+@media (min-width: 1024px) {
+  .max-w-md { max-width: 36rem !important; }
+  nav.fixed.bottom-0.w-full, nav.fixed.bottom-0 { max-width: 36rem !important; }
+}
+
+/* Phone shell safety: never let pages overflow horizontally */
+html, body { overflow-x: hidden; }
+img, iframe, video { max-width: 100%; }
+
+/* Smaller tap targets on tiny phones */
+@media (max-width: 360px) {
+  .px-margin-mobile { padding-left: 12px; padding-right: 12px; }
+  .text-headline-md, .font-headline-md { font-size: 1.25rem; line-height: 1.7rem; }
+}
 </style>
 <script>(function(){if(window.__tnRipple)return;window.__tnRipple=1;document.addEventListener('pointerdown',function(e){var t=e.target.closest&&e.target.closest('.tn-btn');if(!t)return;var r=t.getBoundingClientRect();t.style.setProperty('--rx',((e.clientX-r.left)/r.width*100)+'%');t.style.setProperty('--ry',((e.clientY-r.top)/r.height*100)+'%');},true);})();</script>
 `;
